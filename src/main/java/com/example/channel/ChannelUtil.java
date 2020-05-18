@@ -1,6 +1,7 @@
 package com.example.channel;
 
-import com.example.codec.FixedLengthFrameEncoder;
+import com.example.codec.MessagePackDecoder;
+import com.example.codec.MessagePackEncoder;
 import io.netty.channel.ChannelPipeline;
 import io.netty.handler.codec.LengthFieldBasedFrameDecoder;
 import io.netty.handler.codec.LengthFieldPrepender;
@@ -21,14 +22,19 @@ public class ChannelUtil {
         //ch.pipeline().addLast(new DelimiterBasedFrameDecoder(1024, Unpooled.wrappedBuffer("#".getBytes())));
         /** 4 偏移量解码 在解码器之前增加LengthFieldBasedFrameDecoder，用于处理半包消息，这样接受到的永远是整包消息 */
         //个人觉得和分隔符的意义差不多
-        //maxFrameLength：指定了每个包所能传递的最大数据包大小；
-        //lengthFieldOffset：指定了长度字段在字节码中的 偏移量；
-        //lengthFieldLength：指定了长度字段所占用的 字节长度；
+        //maxFrameLength：指定了每个包所能传递的 "最大数据包大小" ；
+        //lengthFieldOffset：指定了 "长度字段" 在字节码中的 偏移量；
+        //lengthFieldLength：指定了'长度字段'所占用的 '字节长度'；
         //lengthAdjustment：对一些不仅包含有消息头和消息体的数据进行消息头的长度的调整，这样就可以只得到消息体的数据，这里的lengthAdjustment指定的就是消息头的长度；
+        // lengthAdjustment = 包总长度 - lengthFieldOffset - lengthFieldLength - lengthFieldLength内容长度
         //initialBytesToStrip：对于长度字段在消息头中间的情况，可以通过initialBytesToStrip忽略掉消息头以及长度字段占用的字节。
         pipeline.addLast(new LengthFieldBasedFrameDecoder(1024, 0, 2, 0, 2));
+        /** 4 在编码器之前增加2个消息的消息长度字段*/
+        pipeline.addLast(new LengthFieldPrepender(2));
+
+
         /** 自定义对象解码*/
-        //ch.pipeline().addLast(new MessagePackDecoder());
+        pipeline.addLast(new MessagePackDecoder());
         /** 字符串解码*/
         //pipeline.addLast(new StringDecoder());
 
@@ -37,9 +43,8 @@ public class ChannelUtil {
         /** 字符串编码*/
         //pipeline.addLast(new StringEncoder());
         /** 自定义对象编码*/
-        //ch.pipeline().addLast(new MessagePackEncoder());
-        /** 4 在编码器之前增加2个消息的消息长度字段*/
-        pipeline.addLast(new LengthFieldPrepender(2));
+        pipeline.addLast(new MessagePackEncoder());
+
         /** 3 固定字符编码 */
         //pipeline.addLast(new DelimiterBasedFrameEncoder("#"));
         /** 2 行编码器  通过换行符，即\n或者\r\n对数据进行处理 */

@@ -4,7 +4,8 @@
 package com.example.server;
 
 import com.example.channel.ChannelUtil;
-import com.example.server.handler.ServerHandlerInA;
+import com.example.exector.currtent.Count;
+import com.example.server.handler.ServerhandlerInIdle;
 import io.netty.bootstrap.ServerBootstrap;
 import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelInitializer;
@@ -12,10 +13,15 @@ import io.netty.channel.ChannelPipeline;
 import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.SocketChannel;
 import io.netty.channel.socket.nio.NioServerSocketChannel;
+import io.netty.handler.timeout.IdleStateHandler;
 
 import java.net.InetSocketAddress;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 
 public class NettyServer {
+    private static ScheduledExecutorService scheduledExecutorService = Executors.newSingleThreadScheduledExecutor();
 
     private final int port;
 
@@ -24,7 +30,13 @@ public class NettyServer {
     }
 
     public static void main(String[] args) throws Exception {
+
+        scheduledExecutorService.scheduleWithFixedDelay(()->{
+            System.out.println("服务端接收次数"+ Count.countS);
+        },0,5, TimeUnit.SECONDS);
         new NettyServer(8091).start();
+
+        System.out.println("完啦");
     }
 
     public void start() throws Exception {
@@ -60,9 +72,11 @@ public class NettyServer {
                         @Override
                         public void initChannel(SocketChannel ch) {
                             ChannelPipeline pipeline = ch.pipeline();
+                            // 服务端每10秒 检测一次读空闲
+                            ch.pipeline().addLast(new IdleStateHandler(10,0,0));
                             ChannelUtil.buildChannelPipeline(pipeline);
                             // 添加具体handler
-                            ch.pipeline().addLast(new ServerHandlerInA());
+                            ch.pipeline().addLast(new ServerhandlerInIdle());
                             //ch.pipeline().addLast(new ServerHandlerInB());
                             //ch.pipeline().addLast(new ServerHandlerOutB());
                             //ch.pipeline().addLast(new ServerHandlerInC());
@@ -71,8 +85,11 @@ public class NettyServer {
                     });
 
             // 绑定运行
-            ChannelFuture f = b.bind().sync();
-            System.out.println(NettyServer.class.getName() + "开始运行并绑定端口 " + f.channel().localAddress());
+            ChannelFuture f = b.bind().addListener(future -> {
+                System.out.println(NettyServer.class.getName() + "开始运行并绑定端口 " + port);
+            }).sync();
+
+
             f.channel().closeFuture().sync();
         } finally {
             bossGroup.shutdownGracefully().sync();
