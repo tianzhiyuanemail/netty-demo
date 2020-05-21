@@ -62,8 +62,9 @@ public class ServerHandlerIn extends ChannelInboundHandlerAdapter {
 
         // 服务端接收客户端的消息 并做相应处理 然后将相应相应结果返回给调用者
 
-        String testa = testService.testa(request);
+       testService.testa(request);
 
+        request.setBody("8888 return");
         ctx.writeAndFlush(request);
     }
 

@@ -76,11 +76,9 @@ public class NettyServer {
                 System.out.println(NettyServer.class.getName() + "开始运行并绑定端口 " + nettyConfig.getLocalPort());
             });
             channel = f.channel();
+           // channel.closeFuture();
+        } catch (Exception e){
 
-            channel.closeFuture();
-        } finally {
-            bossGroup.shutdownGracefully();
-            workGroup.shutdownGracefully();
         }
     }
 
