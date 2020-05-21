@@ -15,10 +15,11 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 
+/***
+ * 线程池监控类
+ */
 //@Component
-public class ExecutorMonitor
-        implements InitializingBean, DisposableBean
-{
+public class ExecutorMonitor implements InitializingBean, DisposableBean {
 
     private Map<String, ThreadPoolExecutor> executorMap = new LinkedHashMap<>();
 

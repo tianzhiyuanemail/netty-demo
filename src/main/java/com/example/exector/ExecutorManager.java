@@ -9,16 +9,12 @@ import java.util.concurrent.TimeUnit;
 
 public class ExecutorManager {
     /**
+     * 自定义线程池
      */
-    public static final ThreadPoolExecutor executor1 =
+    public static final ThreadPoolExecutor executor =
             new ThreadPoolExecutor(2, 5, 2, TimeUnit.MINUTES,
                     new ArrayBlockingQueue<>(10000), new CustomThreadFactory("executor1"),
                     new ThreadPoolExecutor.AbortPolicy());
-    /**
-     */
-    public static final ThreadPoolExecutor executor2 =
-            new ThreadPoolExecutor(5, 10, 2, TimeUnit.MINUTES,
-                    new ArrayBlockingQueue<>(10000), new CustomThreadFactory("executor2"),
-                    new ThreadPoolExecutor.AbortPolicy());
+
 
 }

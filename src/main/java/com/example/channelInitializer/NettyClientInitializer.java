@@ -1,10 +1,9 @@
-package com.example.channel;
+package com.example.channelInitializer;
 
 
 import com.example.client.handler.ClientInboundHandler;
 import com.example.codec.MessagePackDecoder;
 import com.example.codec.MessagePackEncoder;
-import com.example.server.handler.ServerHandlerIn;
 import io.netty.channel.ChannelInitializer;
 import io.netty.channel.ChannelPipeline;
 import io.netty.channel.socket.SocketChannel;

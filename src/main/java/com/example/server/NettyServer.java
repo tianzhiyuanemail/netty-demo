@@ -3,7 +3,7 @@
  */
 package com.example.server;
 
-import com.example.channel.NettyServerInitializer;
+import com.example.channelInitializer.NettyServerInitializer;
 import com.example.config.NettyConfig;
 import com.example.exector.ExecutorManager;
 import io.netty.bootstrap.ServerBootstrap;
@@ -23,7 +23,7 @@ import java.util.concurrent.ThreadPoolExecutor;
 
 @Component
 public class NettyServer {
-    private ThreadPoolExecutor executor = ExecutorManager.executor1;
+    private ThreadPoolExecutor executor = ExecutorManager.executor;
 
     private Channel channel;
     private EventLoopGroup bossGroup;

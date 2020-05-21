@@ -1,4 +1,4 @@
-package com.example.channel;
+package com.example.channelInitializer;
 
 
 import com.example.codec.MessagePackDecoder;

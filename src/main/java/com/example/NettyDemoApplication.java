@@ -22,6 +22,6 @@ public class NettyDemoApplication  implements CommandLineRunner {
     @Async
     @Override
     public void run(String... args) throws Exception {
-        System.out.println("12233333");
+        System.out.println("启动-------");
     }
 }
