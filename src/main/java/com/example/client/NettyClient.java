@@ -49,9 +49,9 @@ public class NettyClient {
                         public void initChannel(SocketChannel ch) {
                             ChannelPipeline pipeline = ch.pipeline();
                             // 客户端每五秒发送一次心跳检测
-                            pipeline.addLast(new IdleStateHandler(0,0,5));
+                            //pipeline.addLast(new IdleStateHandler(0,0,5));
                             ChannelUtil.buildChannelPipeline(pipeline);
-                            pipeline.addLast(new ClienthandlerInIdle());
+                            pipeline.addLast(new ClientInboundHandler());
                         }
                     });
 
@@ -114,6 +114,7 @@ public class NettyClient {
     public static void main(String[] args) throws Exception {
 
 
+        // todo  断线重连
         scheduledExecutorService.scheduleWithFixedDelay(()->{
             System.out.println("客户端发送次数"+ Count.countC);
         },0,5, TimeUnit.SECONDS);

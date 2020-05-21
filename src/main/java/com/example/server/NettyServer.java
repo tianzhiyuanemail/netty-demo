@@ -5,6 +5,7 @@ package com.example.server;
 
 import com.example.channel.ChannelUtil;
 import com.example.exector.currtent.Count;
+import com.example.server.handler.ServerHandlerInB;
 import com.example.server.handler.ServerhandlerInIdle;
 import io.netty.bootstrap.ServerBootstrap;
 import io.netty.channel.ChannelFuture;
@@ -59,6 +60,8 @@ public class NettyServer {
                         protected void initChannel(NioServerSocketChannel socketChannel) throws Exception {
                             System.out.println("服务端启动中");
                         }
+
+
                     })
                     //.option()
                     //.config()
@@ -73,10 +76,10 @@ public class NettyServer {
                         public void initChannel(SocketChannel ch) {
                             ChannelPipeline pipeline = ch.pipeline();
                             // 服务端每10秒 检测一次读空闲
-                            ch.pipeline().addLast(new IdleStateHandler(10,0,0));
+                            //ch.pipeline().addLast(new IdleStateHandler(10,0,0));
                             ChannelUtil.buildChannelPipeline(pipeline);
                             // 添加具体handler
-                            ch.pipeline().addLast(new ServerhandlerInIdle());
+                            ch.pipeline().addLast(new ServerHandlerInB());
                             //ch.pipeline().addLast(new ServerHandlerInB());
                             //ch.pipeline().addLast(new ServerHandlerOutB());
                             //ch.pipeline().addLast(new ServerHandlerInC());
