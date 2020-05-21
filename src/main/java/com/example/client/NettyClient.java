@@ -3,78 +3,68 @@
  */
 package com.example.client;
 
-import com.example.channel.ChannelUtil;
-import com.example.client.handler.ClientInboundHandler;
-import com.example.client.handler.ClienthandlerInIdle;
-import com.example.exector.currtent.Count;
-import com.example.request.Request;
+import com.example.channel.NettyClientInitializer;
+import com.example.config.NettyConfig;
+import com.example.exector.ExecutorManager;
 import io.netty.bootstrap.Bootstrap;
-import io.netty.channel.*;
+import io.netty.channel.Channel;
+import io.netty.channel.ChannelFuture;
+import io.netty.channel.ChannelFutureListener;
+import io.netty.channel.EventLoopGroup;
 import io.netty.channel.nio.NioEventLoopGroup;
-import io.netty.channel.socket.SocketChannel;
 import io.netty.channel.socket.nio.NioSocketChannel;
-import io.netty.handler.timeout.IdleStateHandler;
+import org.springframework.stereotype.Service;
 
-import java.util.concurrent.Executors;
-import java.util.concurrent.ScheduledExecutorService;
+import javax.annotation.PostConstruct;
+import javax.annotation.PreDestroy;
+import javax.annotation.Resource;
+import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 
-public class NettyClient {
-    private static ScheduledExecutorService scheduledExecutorService = Executors.newSingleThreadScheduledExecutor();
 
-    private final String host;
-    private final int port;
+//@Service
+public class NettyClient {
+
+    private ThreadPoolExecutor executor = ExecutorManager.executor1;
 
     private Channel channel;
     private EventLoopGroup group;
-
     private Bootstrap b;
 
+    @Resource
+    private NettyConfig nettyConfig;
 
-    public NettyClient(String host, int port) {
-        this.host = host;
-        this.port = port;
+    @Resource
+    private NettyClientInitializer nettyClientInitializer;
+
+
+    @PostConstruct
+    public void init() {
+        executor.execute(this::run);
     }
 
-    public void start() throws Exception {
-        group = new NioEventLoopGroup();
-        try {
-
-            b = new Bootstrap();
-            b.group(group)
-                    .channel(NioSocketChannel.class)
-                    //.remoteAddress(new InetSocketAddress(host, port))
-                    .handler(new ChannelInitializer<SocketChannel>() {
-                        @Override
-                        public void initChannel(SocketChannel ch) {
-                            ChannelPipeline pipeline = ch.pipeline();
-                            // 客户端每五秒发送一次心跳检测
-                            //pipeline.addLast(new IdleStateHandler(0,0,5));
-                            ChannelUtil.buildChannelPipeline(pipeline);
-                            pipeline.addLast(new ClientInboundHandler());
-                        }
-                    });
-
-            //实现监听通道连接的方法
-            doConnect();
-
-        } finally {
-            //group.shutdownGracefully().sync();
+    @PreDestroy
+    public void destory() {
+        System.out.println("destroy server resources");
+        if (null == channel) {
+            System.out.println("server channel is null");
         }
+        group.shutdownGracefully();
+        channel.closeFuture().syncUninterruptibly();
+        group = null;
+        channel = null;
     }
-
 
     /**
      * 连接服务端 and 重连
      */
-    protected void doConnect() throws InterruptedException {
-
+    private void doConnect() throws InterruptedException {
         if (channel != null && channel.isActive()) {
             return;
         }
 
         //发起异步连接请求，绑定连接端口和host信息
-        ChannelFuture connect = b.connect(host, port).sync();
+        ChannelFuture connect = b.connect(nettyConfig.getRemoteAddress(), nettyConfig.getRemotePort()).sync();
         //实现监听通道连接的方法
         connect.addListener((ChannelFutureListener) channelFuture -> {
 
@@ -96,39 +86,27 @@ public class NettyClient {
     }
 
 
-    public void send(String s) {
+    public void run() {
+        group = new NioEventLoopGroup();
         try {
-            System.out.println("本地发送数据:" + s + "  字节长度：" + s.getBytes().length);
-            Request request = new Request();
-            request.setRequestId(123L);
-            request.setType(1);
-            request.setBody(s);
 
-            channel.writeAndFlush(request);
-        } catch (Exception e) {
+            b = new Bootstrap();
+            b.group(group)
+                    .channel(NioSocketChannel.class)
+                    //.remoteAddress(new InetSocketAddress(host, port))
+                    .handler(nettyClientInitializer);
+
+            //实现监听通道连接的方法
+            doConnect();
+
+        } catch (InterruptedException e) {
             e.printStackTrace();
+        } finally {
+            //group.shutdownGracefully().sync();
         }
     }
 
-
-    public static void main(String[] args) throws Exception {
-
-
-        // todo  断线重连
-        scheduledExecutorService.scheduleWithFixedDelay(()->{
-            System.out.println("客户端发送次数"+ Count.countC);
-        },0,5, TimeUnit.SECONDS);
-
-        NettyClient client = new NettyClient("127.0.0.1", 8091);
-        client.start();
-
-        for (int i = 0; i < 5; i++) {
-
-            String str = "";
-            for (int j = 0; j < i + 1; j++) {
-                str = str + j;
-            }
-            client.send(str);
-        }
+    public Channel getChannel() {
+        return channel;
     }
 }

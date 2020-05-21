@@ -3,9 +3,14 @@
  */
 package com.example.client.handler;
 
+import io.netty.channel.ChannelHandler;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInboundHandlerAdapter;
+import org.springframework.stereotype.Service;
 
+
+@ChannelHandler.Sharable
+@Service
 public class ClientInboundHandler extends ChannelInboundHandlerAdapter {
 
     @Override

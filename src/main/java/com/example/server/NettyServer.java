@@ -3,50 +3,50 @@
  */
 package com.example.server;
 
-import com.example.channel.ChannelUtil;
-import com.example.exector.currtent.Count;
-import com.example.server.handler.ServerHandlerInB;
-import com.example.server.handler.ServerhandlerInIdle;
+import com.example.channel.NettyServerInitializer;
+import com.example.config.NettyConfig;
+import com.example.exector.ExecutorManager;
 import io.netty.bootstrap.ServerBootstrap;
+import io.netty.channel.Channel;
 import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelInitializer;
-import io.netty.channel.ChannelPipeline;
+import io.netty.channel.EventLoopGroup;
 import io.netty.channel.nio.NioEventLoopGroup;
-import io.netty.channel.socket.SocketChannel;
 import io.netty.channel.socket.nio.NioServerSocketChannel;
-import io.netty.handler.timeout.IdleStateHandler;
+import org.springframework.stereotype.Component;
 
+import javax.annotation.PostConstruct;
+import javax.annotation.PreDestroy;
+import javax.annotation.Resource;
 import java.net.InetSocketAddress;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.TimeUnit;
+import java.util.concurrent.ThreadPoolExecutor;
 
+@Component
 public class NettyServer {
-    private static ScheduledExecutorService scheduledExecutorService = Executors.newSingleThreadScheduledExecutor();
+    private ThreadPoolExecutor executor = ExecutorManager.executor1;
 
-    private final int port;
+    private Channel channel;
+    private EventLoopGroup bossGroup;
+    private EventLoopGroup workGroup;
 
-    public NettyServer(int port) {
-        this.port = port;
+
+    @Resource
+    private NettyConfig nettyConfig;
+
+    @Resource
+    private NettyServerInitializer nettyServerInitializer;
+
+    @PostConstruct
+    public void init() {
+        executor.execute(this::run);
     }
 
-    public static void main(String[] args) throws Exception {
-
-        scheduledExecutorService.scheduleWithFixedDelay(()->{
-            System.out.println("服务端接收次数"+ Count.countS);
-        },0,5, TimeUnit.SECONDS);
-        new NettyServer(8091).start();
-
-        System.out.println("完啦");
-    }
-
-    public void start() throws Exception {
-
+    public void run() {
         // 一个Group包含多个EventLoop，可以理解为线程池
         // 处理请求
-        NioEventLoopGroup bossGroup = new NioEventLoopGroup();
+        bossGroup = new NioEventLoopGroup();
         // 处理回调
-        NioEventLoopGroup workGroup = new NioEventLoopGroup();
+        workGroup = new NioEventLoopGroup();
         try {
             // netty 的组件容器 用于把其他部分连接起来
             ServerBootstrap b = new ServerBootstrap();
@@ -60,44 +60,46 @@ public class NettyServer {
                         protected void initChannel(NioServerSocketChannel socketChannel) throws Exception {
                             System.out.println("服务端启动中");
                         }
-
-
                     })
                     //.option()
                     //.config()
                     // 设置开启端口号
-                    .localAddress(new InetSocketAddress(port))
+                    .localAddress(new InetSocketAddress(nettyConfig.getLocalPort()))
                     //.childAttr()
                     //.childOption()
                     //.childOptions()
                     // 设置子处理handler
-                    .childHandler(new ChannelInitializer<SocketChannel>() {
-                        @Override
-                        public void initChannel(SocketChannel ch) {
-                            ChannelPipeline pipeline = ch.pipeline();
-                            // 服务端每10秒 检测一次读空闲
-                            //ch.pipeline().addLast(new IdleStateHandler(10,0,0));
-                            ChannelUtil.buildChannelPipeline(pipeline);
-                            // 添加具体handler
-                            ch.pipeline().addLast(new ServerHandlerInB());
-                            //ch.pipeline().addLast(new ServerHandlerInB());
-                            //ch.pipeline().addLast(new ServerHandlerOutB());
-                            //ch.pipeline().addLast(new ServerHandlerInC());
-                            //ch.pipeline().addLast(new ServerHandlerOutC());
-                        }
-                    });
+                    .childHandler(nettyServerInitializer);
 
             // 绑定运行
             ChannelFuture f = b.bind().addListener(future -> {
-                System.out.println(NettyServer.class.getName() + "开始运行并绑定端口 " + port);
-            }).sync();
+                System.out.println(NettyServer.class.getName() + "开始运行并绑定端口 " + nettyConfig.getLocalPort());
+            });
+            channel = f.channel();
 
-
-            f.channel().closeFuture().sync();
+            channel.closeFuture();
         } finally {
-            bossGroup.shutdownGracefully().sync();
-            workGroup.shutdownGracefully().sync();
+            bossGroup.shutdownGracefully();
+            workGroup.shutdownGracefully();
         }
     }
 
+
+    @PreDestroy
+    public void destory() {
+        System.out.println("destroy server resources");
+        if (null == channel) {
+            System.out.println("server channel is null");
+        }
+        bossGroup.shutdownGracefully();
+        workGroup.shutdownGracefully();
+        channel.closeFuture().syncUninterruptibly();
+        bossGroup = null;
+        workGroup = null;
+        channel = null;
+    }
+
+    public Channel getChannel() {
+        return channel;
+    }
 }

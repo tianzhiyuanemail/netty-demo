@@ -4,18 +4,30 @@
 package com.example.server.handler;
 
 import com.example.request.Request;
+import com.example.service.TestService;
 import io.netty.buffer.ByteBuf;
+import io.netty.channel.ChannelHandler;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInboundHandlerAdapter;
 import io.netty.handler.timeout.IdleStateEvent;
 import io.netty.util.CharsetUtil;
 import lombok.SneakyThrows;
+import org.springframework.stereotype.Service;
+
+import javax.annotation.Resource;
 
 
 /***
  * channelhandle 完整的生命周期
  */
-public class ServerHandlerInB extends ChannelInboundHandlerAdapter {
+
+@ChannelHandler.Sharable
+@Service
+public class ServerHandlerIn extends ChannelInboundHandlerAdapter {
+
+
+    @Resource
+    private TestService testService;
 
     // 1 handler 当检测到新的连接之后,调用ch.pipeline().addLast()之后的回调,
     // 表示当前的channel中已经成功添加了一个逻辑处理器
@@ -47,8 +59,11 @@ public class ServerHandlerInB extends ChannelInboundHandlerAdapter {
         Request request = (Request)msg;
         request.setBody("服务端发送的消息"+request.getBody());
         System.out.println("4 channelRead客户端向服务端每次发来数据之后,都会回调这个方法,表示有数据可读");
-        //ctx.write(msg);
-        //super.channelRead(ctx,msg);
+
+        // 服务端接收客户端的消息 并做相应处理 然后将相应相应结果返回给调用者
+
+        String testa = testService.testa(request);
+
         ctx.writeAndFlush(request);
     }
 
