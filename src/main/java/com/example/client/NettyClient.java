@@ -38,7 +38,7 @@ public class NettyClient {
     private AtomicBoolean reconnect = new AtomicBoolean(false);
 
     // 线程安全的 AtomicInteger
-    public static AtomicInteger reconnectCount = new AtomicInteger(0);
+    public AtomicInteger reconnectCount = new AtomicInteger(0);
 
     // netty channel 通道
     private Channel channel;
@@ -89,6 +89,7 @@ public class NettyClient {
                         } else {
                             System.out.println("重连....");
                             reconnect.compareAndSet(false, false);
+                            reconnectCount.incrementAndGet();
                         }
                     });
         } catch (Exception e) {
@@ -103,7 +104,6 @@ public class NettyClient {
         b = new Bootstrap();
         b.group(group)
                 .channel(NioSocketChannel.class)
-                //.remoteAddress(new InetSocketAddress(host, port))
                 .handler(nettyClientInitializer);
 
         // 如果连接失败 则5秒钟重连一次
@@ -111,7 +111,9 @@ public class NettyClient {
             if (!reconnect.get()) {
                 //实现监听通道连接的方法
                 doConnect();
-                System.out.printf("客户端重新连接次数：", reconnectCount.incrementAndGet());
+                System.out.println("客户端重新连接次数：" + reconnectCount.get()
+                        + "连接IP：" + nettyConfig.getRemoteAddress()
+                        + "连接端口：" + nettyConfig.getRemotePort());
             }
         }, 0, 5, TimeUnit.SECONDS);
 
