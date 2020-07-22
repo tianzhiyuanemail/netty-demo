@@ -4,6 +4,7 @@
 package com.example.client.handler;
 
 import com.example.client.NettyClient;
+import com.example.util.HttpClientUtils;
 import io.netty.channel.ChannelHandler;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInboundHandlerAdapter;
@@ -11,6 +12,8 @@ import lombok.SneakyThrows;
 import org.springframework.stereotype.Service;
 
 import javax.annotation.Resource;
+import java.util.HashMap;
+import java.util.Map;
 
 
 @ChannelHandler.Sharable
@@ -41,6 +44,14 @@ public class ClientInboundHandler extends ChannelInboundHandlerAdapter {
     public void channelActive(ChannelHandlerContext ctx) throws Exception {
         super.channelActive(ctx);
         System.out.println("3 客户端 channelActive 连接建立事件");
+
+        Map<String,String> m = new HashMap<>();
+        // todo 这里替换传递的参数 与 url
+        m.put("a","123");
+
+        String result = HttpClientUtils.sendPostForm("url", m);
+
+        System.out.println("响应的报文"+result);
     }
 
     // 4 客户端向服务端每次发来数据之后,都会回调这个方法,表示有数据可读
@@ -49,7 +60,8 @@ public class ClientInboundHandler extends ChannelInboundHandlerAdapter {
     public void channelRead(ChannelHandlerContext ctx, Object msg) {
         //        Request request = (Request)msg;
 //        System.out.println("客户端接受消息: " + request.toString());
-        System.out.println(msg);
+        System.out.println("4 客户端接受消息: "+msg);
+
     }
 
     // 5 服务端每次读完一次完整的数据之后,都会回调这个方法,表示数据读取完毕

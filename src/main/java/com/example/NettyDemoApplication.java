@@ -14,7 +14,7 @@ public class NettyDemoApplication  implements CommandLineRunner {
     public static void main(String[] args) {
 //        SpringApplication.run(NettyDemoApplication.class, args);
         SpringApplication app = new SpringApplication(NettyDemoApplication.class);
-        app.setWebApplicationType(WebApplicationType.NONE);//不启动web服务
+        //app.setWebApplicationType(WebApplicationType.NONE);//不启动web服务
         app.run(args);
 
     }
